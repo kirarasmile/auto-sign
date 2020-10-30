@@ -124,7 +124,8 @@ def getSession(user, apis):
 
 
 # 获取最新未签到任务
-def getUnSignedTasks(session, apis):
+def getUnSignedTasks(session, apis, user):
+    user = user['user']
     headers = {
         'Accept': 'application/json, text/plain, */*',
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.97 Safari/537.36',
@@ -135,14 +136,16 @@ def getUnSignedTasks(session, apis):
     }
     # 第一次请求每日签到任务接口，主要是为了获取MOD_AUTH_CAS
     res = session.post(
-        url='https://{host}/wec-counselor-sign-apps/stu/sign/getStuSignInfosInOneDay'.format(host=apis['host']),
+        url='https://{host}/wec-counselor-sign-apps/stu/sign/queryDailySginTasks'.format(host=apis['host']),
         headers=headers, data=json.dumps({}), verify=not debug)
+    # print(res.json()['datas'])
     # 第二次请求每日签到任务接口，拿到具体的签到任务
     res = session.post(
-        url='https://{host}/wec-counselor-sign-apps/stu/sign/getStuSignInfosInOneDay'.format(host=apis['host']),
+        url='https://{host}/wec-counselor-sign-apps/stu/sign/queryDailySginTasks'.format(host=apis['host']),
         headers=headers, data=json.dumps({}), verify=not debug)
     if len(res.json()['datas']['unSignedTasks']) < 1:
         log('当前没有未签到任务')
+        sendMessage(user['email'], '当前没有未签到任务')
         exit(-1)
     # log(res.json())
     latestTask = res.json()['datas']['unSignedTasks'][0]
@@ -163,7 +166,7 @@ def getDetailTask(session, params, apis):
         'Content-Type': 'application/json;charset=UTF-8'
     }
     res = session.post(
-        url='https://{host}/wec-counselor-sign-apps/stu/sign/detailSignInstance'.format(host=apis['host']),
+        url='https://{host}/wec-counselor-sign-apps/stu/sign/detailSignTaskInst'.format(host=apis['host']),
         headers=headers, data=json.dumps(params), verify=not debug)
     data = res.json()['datas']
     return data
@@ -277,39 +280,58 @@ def submitForm(session, user, form, apis):
         # 'Host': 'swu.cpdaily.com',
         'Connection': 'Keep-Alive'
     }
-    res = session.post(url='https://{host}/wec-counselor-sign-apps/stu/sign/submitSign'.format(host=apis['host']),
+    res = session.post(url='https://{host}/wec-counselor-sign-apps/stu/sign/completeSignIn'.format(host=apis['host']),
                        headers=headers, data=json.dumps(form), verify=not debug)
+    print(res)
     message = res.json()['message']
     if message == 'SUCCESS':
         log('自动签到成功')
-        sendMessage('自动签到成功', user['email'])
+        sendMessage(user['email'], '自动填写提交成功！')
     else:
         log('自动签到失败，原因是：' + message)
+        sendMessage(user['email'],  message)
         # sendMessage('自动签到失败，原因是：' + message, user['email'])
         exit(-1)
 
 
-# 发送邮件通知
-def sendMessage(msg, email):
-    send = email
-    if send != '':
-        log('正在发送邮件通知。。。')
-        res = requests.post(url='http://www.zimo.wiki:8080/mail-sender/sendMail',
-                            data={'title': '今日校园自动签到结果通知', 'content': msg, 'to': send}, verify=not debug)
-        code = res.json()['code']
-        if code == 0:
-            log('发送邮件通知成功。。。')
-        else:
-            log('发送邮件通知失败。。。')
-            log(res.json())
+# # 发送邮件通知
+# def sendMessage(msg, email):
+#     send = email
+#     if send != '':
+#         log('正在发送邮件通知。。。')
+#         res = requests.post(url='http://www.zimo.wiki:8080/mail-sender/sendMail',
+#                             data={'title': '今日校园自动签到结果通知', 'content': msg, 'to': send}, verify=not debug)
+#         code = res.json()['code']
+#         if code == 0:
+#             log('发送邮件通知成功。。。')
+#         else:
+#             log('发送邮件通知失败。。。')
+#             log(res.json())
 
+# 发送server酱推送
+
+def sendMessage(send, msg):
+    if send != '':
+        log('正在用server酱进行推送')
+        key = ""
+
+    url = "https://sc.ftqq.com/%s.send" % (key)
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36'}
+    payload = {'text': '签到结果通知' + str(msg), 'desp': getTimeStr() + str(msg)}
+    res = requests.post(url, params=payload, headers=headers)
+    errmsg =res.json()['errmsg']
+    if errmsg == 'success':
+        log('server酱通知成功')
+    else:
+        log('推送失败')
+        log(res.json())
 
 # 主函数
 def main():
     for user in config['users']:
         apis = getCpdailyApis(user)
         session = getSession(user, apis)
-        params = getUnSignedTasks(session, apis)
+        params = getUnSignedTasks(session, apis, user)
         task = getDetailTask(session, params, apis)
         form = fillForm(task, session, user, apis)
         # form = getDetailTask(session, user, params, apis)
