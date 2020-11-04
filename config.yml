@@ -43,3 +43,6 @@ cpdaily:
 #        title: 体温
 #        #表单项默认值
 #        value: 正常
+# server酱配置
+serverchan :
+  sckey:  
