@@ -7,3 +7,6 @@
 # 修改了部分api自用
 
 # 在index.py增加了server酱的调用，使用时自行在config.yml填写key
+
+## 2020.12.15
+更换了请求链接
