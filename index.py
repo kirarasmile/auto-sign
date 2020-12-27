@@ -136,12 +136,12 @@ def getUnSignedTasks(session, apis, user):
     }
     # 第一次请求每日签到任务接口，主要是为了获取MOD_AUTH_CAS
     res = session.post(
-        url='https://{host}/wec-counselor-sign-apps/stu/sign/queryDailySginTasks'.format(host=apis['host']),
+        url='https://{host}/wec-counselor-sign-apps/stu/sign/getStuSignInfosInOneDay'.format(host=apis['host']),
         headers=headers, data=json.dumps({}), verify=not debug)
     # print(res.json()['datas'])
     # 第二次请求每日签到任务接口，拿到具体的签到任务
     res = session.post(
-        url='https://{host}/wec-counselor-sign-apps/stu/sign/queryDailySginTasks'.format(host=apis['host']),
+        url='https://{host}/wec-counselor-sign-apps/stu/sign/getStuSignInfosInOneDay'.format(host=apis['host']),
         headers=headers, data=json.dumps({}), verify=not debug)
     if len(res.json()['datas']['unSignedTasks']) < 1:
         log('当前没有未签到任务')
@@ -166,7 +166,7 @@ def getDetailTask(session, params, apis):
         'Content-Type': 'application/json;charset=UTF-8'
     }
     res = session.post(
-        url='https://{host}/wec-counselor-sign-apps/stu/sign/detailSignTaskInst'.format(host=apis['host']),
+        url='https://{host}/wec-counselor-sign-apps/stu/sign/detailSignInstance'.format(host=apis['host']),
         headers=headers, data=json.dumps(params), verify=not debug)
     data = res.json()['datas']
     return data
@@ -280,7 +280,7 @@ def submitForm(session, user, form, apis):
         # 'Host': 'swu.cpdaily.com',
         'Connection': 'Keep-Alive'
     }
-    res = session.post(url='https://{host}/wec-counselor-sign-apps/stu/sign/completeSignIn'.format(host=apis['host']),
+    res = session.post(url='https://{host}/wec-counselor-sign-apps/stu/sign/submitSign'.format(host=apis['host']),
                        headers=headers, data=json.dumps(form), verify=not debug)
     print(res)
     message = res.json()['message']
@@ -319,7 +319,7 @@ def sendMessage(send, msg):
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/62.0.3202.94 Safari/537.36'}
     payload = {'text': '签到结果通知' + str(msg), 'desp': getTimeStr() + str(msg)}
     res = requests.post(url, params=payload, headers=headers)
-    errmsg =res.json()['errmsg']
+    errmsg = res.json()['errmsg']
     if errmsg == 'success':
         log('server酱通知成功')
     else:
