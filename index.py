@@ -211,6 +211,7 @@ def fillForm(task, session, user, apis):
     form['isMalposition'] = task['isMalposition']
     form['abnormalReason'] = user['abnormalReason']
     form['position'] = user['address']
+    form['uaIsCpadaily'] = True
     return form
 
 
@@ -246,7 +247,7 @@ def getPictureUrl(session, fileName, apis):
 
 
 # DES加密
-def DESEncrypt(s, key='ST83=@XV'):
+def DESEncrypt(s, key='b3L26XNL'):
     key = key
     iv = b"\x01\x02\x03\x04\x05\x06\x07\x08"
     k = des(key, CBC, iv, pad=None, padmode=PAD_PKCS5)
@@ -261,7 +262,7 @@ def submitForm(session, user, form, apis):
     extension = {
         "lon": user['lon'],
         "model": "OPPO R11 Plus",
-        "appVersion": "8.1.14",
+        "appVersion": "8.2.14",
         "systemVersion": "4.4.4",
         "userId": user['username'],
         "systemName": "android",
@@ -282,7 +283,7 @@ def submitForm(session, user, form, apis):
     }
     res = session.post(url='https://{host}/wec-counselor-sign-apps/stu/sign/submitSign'.format(host=apis['host']),
                        headers=headers, data=json.dumps(form), verify=not debug)
-    print(res)
+    # print(res)
     message = res.json()['message']
     if message == 'SUCCESS':
         log('自动签到成功')
